@@ -1,0 +1,17 @@
+{
+  "fehd:ap:1409": {
+    "expectedOriginal": {
+      "lat": 22.57737502,
+      "lng": 114.059137
+    },
+    "lat": 22.3565558,
+    "lng": 114.2962615,
+    "locationPrecision": "exact",
+    "reason": "The FEHD source coordinate is in Shenzhen despite districtID SK. Corrected to the mapped LCSD toilet at Hap Mun Bay.",
+    "sourceRef": {
+      "source": "OpenStreetMap",
+      "sourceId": "node/2930723166",
+      "url": "https://www.openstreetmap.org/node/2930723166"
+    }
+  }
+}
