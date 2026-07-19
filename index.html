@@ -194,8 +194,9 @@
   </style>
   <style>
     /* Inlined docs route-result contract for the app-local prototype server. */
-    .route-options{display:flex;align-items:center;gap:8px;margin:-4px 0 10px;overflow-x:auto;overflow-y:hidden;padding:6px 0 10px;border-bottom:1px solid var(--line);background:#fff;scrollbar-width:none;overscroll-behavior-x:contain;touch-action:pan-x pan-y;}
+    .route-options{display:flex;align-items:center;gap:8px;margin:-4px 0 10px;overflow-x:auto;overflow-y:hidden;padding:6px 0 10px;border-bottom:1px solid var(--line);background:#fff;cursor:grab;scrollbar-width:none;overscroll-behavior-x:contain;touch-action:pan-x pan-y;}
     .route-options::-webkit-scrollbar{display:none;}
+    .route-options.is-dragging,.route-options.is-dragging *{cursor:grabbing!important;user-select:none!important;}
     .route-option-button{display:inline-grid;grid-template-columns:0 minmax(0,1fr);align-items:center;flex:0 0 auto;gap:0;min-height:38px;border:1px solid var(--line);border-radius:999px;padding:7px 12px;background:#fff;color:var(--muted);font-size:.86rem;font-weight:700;line-height:1.25;text-align:left;white-space:nowrap;}
     .route-option-button:hover{background:#edf7f4;}
     .route-option-button.is-active{grid-template-columns:18px minmax(0,1fr);gap:5px;border-color:var(--teal);background:#e4f3ef;color:var(--teal-dark);box-shadow:inset 0 0 0 1px var(--teal);}
@@ -456,8 +457,8 @@
     @keyframes voice-query-pulse{from{opacity:.52;transform:scaleX(.76)}to{opacity:1;transform:scaleX(1)}}
     @media(prefers-reduced-motion:reduce){.context-weather-card.is-loading:after,.context-location-card.is-locating svg,.ai-speech-button.is-preparing,.ai-speech-button.is-preparing svg,.voice-query.is-listening:before,.voice-query.is-processing:before,.voice-query.is-listening .voice-wave i,.voice-query.is-processing .voice-wave{animation:none;}}
     @media(max-width:380px){.context-overview{grid-template-columns:repeat(2,minmax(0,1fr));}.context-location-card{grid-column:1/-1;min-height:66px;}}
-    @media(max-width:430px){.voice-query{grid-template-columns:1fr;}.voice-query-button{width:100%;}.voice-query-transcript{grid-column:1;}.voice-query-copy span{white-space:normal;}.route-map-card{height:192px;}#run .run-arrow-desktop{display:none;}#run .run-arrow-mobile{display:inline;}}
-    @media(max-width:900px){.form-panel{height:auto;max-height:none;overflow:visible;}.profile-strip{width:min(100%,410px);margin-left:0;margin-right:auto;}.journey-line{min-height:68px;}.journey-line:before{bottom:-26px;}}
+    @media(max-width:430px){.voice-query{grid-template-columns:1fr;}.voice-query-button{width:100%;}.voice-query-transcript{grid-column:1;}.voice-query-copy span{white-space:normal;}.route-map-card{height:192px;}}
+    @media(max-width:900px){.form-panel{height:auto;max-height:none;overflow:visible;}.profile-strip{width:min(100%,410px);margin-left:0;margin-right:auto;}.journey-line{min-height:68px;}.journey-line:before{bottom:-26px;}#run .run-arrow-desktop{display:none;}#run .run-arrow-mobile{display:inline;}}
     @media(prefers-reduced-motion:reduce){.skeleton-route,.skeleton-row,.ai-box.is-thinking,.route-map-card.is-loading:after{animation:none;}}
   </style>
 </head>
@@ -718,6 +719,16 @@
       var option=state.options[state.selected];if(!option)return;var payload={origin:state.places.start?{name:state.places.start.name,type:state.places.start.type}:null,destination:state.places.end?{name:state.places.end.name,type:state.places.end.type}:null,travelProfile:profileValue(),selectedRoute:serialize(option,state.selected),allRoutes:state.evidence};
       byId("json").textContent=JSON.stringify(payload,null,2);byId("prompt").textContent=promptForDisplay();renderDetail(option);renderAiForSelected()
     }
+    function initRouteOptionScroller(){
+      var scroller=byId("routes"),active=false,moved=false,suppressClick=false,startX=0,startScroll=0,pointerId=null;if(!scroller)return;
+      scroller.addEventListener("wheel",function(event){if(scroller.scrollWidth<=scroller.clientWidth+1)return;var delta=Math.abs(event.deltaX)>Math.abs(event.deltaY)?event.deltaX:event.deltaY;if(!delta)return;if(event.deltaMode===1)delta*=16;else if(event.deltaMode===2)delta*=scroller.clientWidth;var before=scroller.scrollLeft;scroller.scrollLeft+=delta;if(scroller.scrollLeft!==before)event.preventDefault()},{passive:false});
+      scroller.addEventListener("pointerdown",function(event){if(event.button!==0||(event.pointerType&&event.pointerType!=="mouse"))return;active=true;moved=false;suppressClick=false;startX=event.clientX;startScroll=scroller.scrollLeft;pointerId=event.pointerId});
+      scroller.addEventListener("pointermove",function(event){if(!active||event.pointerId!==pointerId)return;var delta=event.clientX-startX;if(!moved&&Math.abs(delta)<5)return;if(!moved&&scroller.setPointerCapture)scroller.setPointerCapture(pointerId);moved=true;scroller.classList.add("is-dragging");scroller.scrollLeft=startScroll-delta;event.preventDefault()});
+      function finishDrag(event){if(!active||event.pointerId!==pointerId)return;active=false;if(scroller.hasPointerCapture&&scroller.hasPointerCapture(pointerId))scroller.releasePointerCapture(pointerId);scroller.classList.remove("is-dragging");if(moved){suppressClick=true;setTimeout(function(){suppressClick=false},0)}pointerId=null}
+      scroller.addEventListener("pointerup",finishDrag);scroller.addEventListener("pointercancel",finishDrag);
+      scroller.addEventListener("click",function(event){if(!suppressClick)return;event.preventDefault();event.stopImmediatePropagation()},true);
+      scroller.addEventListener("dragstart",function(event){if(active)event.preventDefault()})
+    }
     function renderRoutes(){
       byId("routes").innerHTML=state.options.map(function(option,i){var active=i===state.selected,label=option.optionLabel||("路線"+(i+1)),badges=(option.badges||[]).slice(0,2).join(" / ")||option.summaryMode||modes(option)||"路線",variant=option.walkVariant?" is-walk-"+option.walkVariant:"",check='<svg class="route-option-check" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 12 4 4 8-9"/></svg>';return'<button class="route-option-button'+variant+(active?" is-active":"")+'" type="button" aria-pressed="'+active+'" data-index="'+i+'" aria-label="'+esc(label+"，"+badges+(active?"，已選擇":""))+'">'+check+"<span>"+esc(label)+"<small>"+esc(badges)+"</small></span></button>"}).join("");
       Array.from(byId("routes").querySelectorAll("button")).forEach(function(button){button.onclick=function(){state.selected=Number(button.dataset.index);state.expandedSegment=null;renderRoutes();renderEvidence();status("已選擇路線 "+(state.selected+1)+"。","success")}});renderEvidence()
@@ -847,7 +858,7 @@
     var runWithVoiceQuery=run;run=async function(){cancelVoiceQueryRecognition(true);return runWithVoiceQuery.apply(this,arguments)}
     var renderEvidenceWithRouteMap=renderEvidence;renderEvidence=function(){var result=renderEvidenceWithRouteMap.apply(this,arguments),option=state.options[state.selected];if(option)renderRouteMap(option,state.places.start,state.places.end);return result}
     async function init(){
-      initRouteMap();wireSearch("start");wireSearch("end");state.routing=window.MapableRoutingService.create();byId("run").disabled=true;
+      initRouteMap();initRouteOptionScroller();wireSearch("start");wireSearch("end");state.routing=window.MapableRoutingService.create();byId("run").disabled=true;
       document.addEventListener("click",function(event){if(!event.target.closest(".input-wrap"))closeSearchMenus();if(!event.target.closest(".api-combobox"))closeApiMenus()});
       document.querySelectorAll("#profile-picker .profile-button").forEach(function(button){button.onclick=function(){setProfile(button.dataset.profile);markPlanDirty();if(state.options.length)renderEvidence()}});
       document.querySelectorAll("#ai-output-switch .ai-output-button[data-output-style]").forEach(function(button){button.onclick=function(){setAiOutputStyle(button.dataset.outputStyle)}});
