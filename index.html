@@ -343,6 +343,8 @@
     .ai-content h3,.ai-content h4,.ai-content h5{margin:8px 0 5px;color:inherit;font-size:1em;font-weight:900;}
     .ai-content ul,.ai-content ol{margin:6px 0;padding-left:20px;}
     .ai-content code{padding:1px 4px;border-radius:4px;background:rgba(0,0,0,.08);font-family:Consolas,monospace;font-size:.9em;}
+    .ai-content hr{height:1px;margin:14px 0;border:0;background:var(--line);}
+    .ai-box.is-thinking .ai-content hr{background:rgba(255,255,255,.55);}
     @media(max-width:900px){.form-panel{height:auto;max-height:none;overflow:visible;}.profile-strip{width:min(100%,410px);margin-left:0;margin-right:auto;}.journey-line{min-height:68px;}.journey-line:before{bottom:-26px;}}
     @media(prefers-reduced-motion:reduce){.skeleton-route,.skeleton-row,.ai-box.is-thinking{animation:none;}}
   </style>
@@ -570,6 +572,7 @@
       source.split("\n").forEach(function(line){
         var trimmed=line.trim();
         if(!trimmed){flushParagraph();flushList();return}
+        if(/^-{3,}$/.test(trimmed)){flushParagraph();flushList();output.push("<hr>");return}
         var heading=trimmed.match(/^(#{1,5})\s+(.+)$/);
         if(heading){flushParagraph();flushList();var level=Math.min(5,Math.max(3,heading[1].length+2));output.push("<h"+level+">"+inline(heading[2])+"</h"+level+">");return}
         var unordered=trimmed.match(/^[-*?]\s+(.+)$/),ordered=trimmed.match(/^\d+[.)]\s+(.+)$/);
