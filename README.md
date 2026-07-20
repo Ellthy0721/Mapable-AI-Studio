@@ -128,6 +128,16 @@ API Key 只用於請求驗證，不會放入路線證據、提示詞或頁面顯
 - 本地靜態 JSON 提供地點、交通、票價、出口、設施及路線形狀。
 - GitHub Actions 與 GitHub Pages 負責靜態部署。
 
+## 開源字體
+
+Mapable 的介面及品牌視覺使用以下開源字體：
+
+- [Staatliches](https://fonts.google.com/specimen/Staatliches)：品牌及展示文字。
+- [Noto Sans SC](https://fonts.google.com/noto/specimen/Noto+Sans+SC)：簡體中文字形。
+- [Noto Sans TC](https://fonts.google.com/noto/specimen/Noto+Sans+TC)：繁體中文字形。
+
+以上字體均依 [SIL Open Font License 1.1](https://openfontlicense.org/) 發佈；字體版權與商標分別歸原作者及權利人所有。
+
 ## 倉庫結構
 
 ```text
